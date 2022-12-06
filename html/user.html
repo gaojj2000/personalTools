@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>用户界面</title>
+		<link rel="shortcut icon" href="/html/favicon.ico" />
+		<link rel="bookmark" href="/html/favicon.ico" />
+		<script src="js/jquery-3.4.1.min.js"></script>
+		<script src="js/jquerysession.js"></script>
+	</head>
+	<body>
+		<p><font style="color: red; font-weight: bolder;">由于爬取整个QQ空间或所有QQ群或所有QQ好友信息过于消耗时间，现在暂时不推出这些方案，敬请期待吧！</font></p>
+		<p><a onclick="logout()" style="width: 50px;">退出登录</a><a href="/permission.html" target="_blank" style="margin-left: 10px;">已使用过的权限查询</a></p>
+		<div id="permission"></div>
+		<div>
+			<h2>注册信息（获取稍有延迟）</h2>
+			<form id="qq_birth">
+				<p><input type="text" name="fun" placeholder="请输入操作码"/></p>
+				<p><input type="text" name="cookie" placeholder="请输入cookie值" /><a href="https://qun.qq.com/" target="_blank" style="margin-left: 10px;" onclick="alert('登录后在控制台输入document.cookie即可获取cookie值')">QQ群官网</a></p>
+				<p><a onclick="get_birth()" style="width: 100px;">获取注册信息</a></p>
+			</form>
+		</div>
+		<pre id="birth"></pre>
+		<div>
+			<h2>前200好友亲密度</h2>
+			<form id="top200">
+				<p><input type="text" name="fun" placeholder="请输入操作码"/></p>
+				<p><input type="text" name="cookie" placeholder="请输入cookie值" /><a href="https://user.qzone.qq.com/" target="_blank" style="margin-left: 10px;" onclick="alert('登录后在控制台输入document.cookie即可获取cookie值')">QQ空间官网</a></p>
+				<p><input type="radio" name="do" value="1" checked="checked" />我在意谁</p>
+				<p><input type="radio" name="do" value="2" />谁在意我</p>
+				<p><a onclick="get_top200()" style="width: 225px;">获取前200位好友的亲密度关系</a></p>
+			</form>
+		</div>
+		<pre id="dump"></pre>
+		<div>
+			<h2>单好友</h2>
+			<form id="friend">
+				<p><input type="text" name="fun" placeholder="请输入操作码"/></p>
+				<p><input type="text" name="cookie" placeholder="请输入cookie值" /><a href="https://user.qzone.qq.com/" target="_blank" style="margin-left: 10px;" onclick="alert('登录后在控制台输入document.cookie即可获取cookie值')">QQ空间官网</a></p>
+				<p><input type="text" name="passive" placeholder="请输入好友QQ号" /></p>
+				<p><a onclick="get_friend()" style="width: 175px;">获取单好友详细信息</a></p>
+			</form>
+		</div>
+		<pre id="friend_show"></pre>
+		<div>
+			<h2>单群（获取稍有延迟，据获群成员数量而定）</h2>
+			<form id="group">
+				<p><input type="text" name="fun" placeholder="请输入操作码"/></p>
+				<p><input type="text" name="cookie" placeholder="请输入cookie值" /><a href="https://qun.qq.com/" target="_blank" style="margin-left: 10px;" onclick="alert('登录后在控制台输入document.cookie即可获取cookie值')">QQ群官网</a></p>
+				<p><input type="text" name="group" placeholder="请输入群号" /></p>
+				<p><a onclick="get_group()" style="width: 175px;">获取单群详细信息</a></p>
+			</form>
+		</div>
+		<pre id="group_show"></pre>
+		<div>
+			<h2>全民K歌歌曲下载地址分析（需要一定时间，差不多【100首/分】，据获取歌曲数量而定，期间请不要刷新界面！）</h2>
+			<form id="qmkg">
+				<p><input type="text" name="fun" placeholder="请输入操作码"/></p>
+				<p><input type="text" name="cookie" placeholder="请输入cookie值" /><a href="https://kg.qq.com/index-pc.html" target="_blank" style="margin-left: 10px;" onclick="alert('登录后在控制台输入document.cookie即可获取cookie值')">全民K歌官网</a></p>
+				<p><input type="text" name="uid" placeholder="请输入全民K歌主页uid(默认自己)" /></p>
+				<p><input type="radio" name="do" value="1" checked="checked" />下载按钮</p>
+				<p><input type="radio" name="do" value="0" />全部链接</p>
+				<p><a onclick="get_qmkg()" style="width: 250px;">获取全民K歌歌曲下载地址分析</a></p>
+			</form>
+		</div>
+		<pre id="qmkg_analyze"></pre>
+		<style>
+			p {
+				height: 32px;
+			}
+			
+			a {
+				color: black;
+				padding: 5px 10px;
+				cursor: pointer;
+				text-decoration: none;
+				border: black solid 1px;
+			}
+
+			a.downloader {
+				padding: 5px;
+				margin: 5px;
+			}
+
+			input[type="text"] {
+				float: left;
+				width: 200px;
+				height: 25px;
+			}
+		</style>
+		<script>
+			if (!$.session.get("Authorization")) {
+				$.session.set("Authorization", "Bearer "); // 必须要有初始值，否则后端可能不会生成中文返回
+			}
+			
+			$.ajax({
+				type: "get",
+				async: true,
+				url: "/permission",
+				dataType: "text",
+				cache: false,
+				processData: false,
+				contentType: false,
+				headers: {
+					"Authorization": $.session.get("Authorization"),
+					"Access-Control-Allow-Origin": "*"
+				},
+				success: function(data) {
+					$("#permission").html(data);
+				},
+				error: function(err) {
+					if (err.responseJSON != undefined) {
+						if (typeof err.responseJSON.detail == 'object') {
+							alert("请确保已经填写完成所有字段，并且字段符合规则！");
+						} else {
+							alert(err.responseJSON.detail);
+						}
+					} else {
+						alert(err.responseText);
+					}
+				}
+			})
+
+			function get_birth() {
+				$.ajax({
+					type: "post",
+					async: true,
+					url: "/qq_birth",
+					data: new FormData($("#qq_birth")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					headers: {
+						"Authorization": $.session.get("Authorization"),
+						"Access-Control-Allow-Origin": "*"
+					},
+					success: function(data) {
+						$("#birth").html(data);
+					},
+					error: function(err) {
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+					}
+				})
+			}
+
+			function get_top200() {
+				$.ajax({
+					type: "post",
+					async: true,
+					url: "/top200",
+					data: new FormData($("#top200")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					headers: {
+						"Authorization": $.session.get("Authorization"),
+						"Access-Control-Allow-Origin": "*"
+					},
+					success: function(data) {
+						$.ajax({
+							type: "post",
+							async: true,
+							url: "/dump",
+							data: JSON.stringify({
+								"data": data
+							}),
+							dataType: "text",
+							cache: false,
+							processData: false,
+							contentType: false,
+							headers: {
+								"Access-Control-Allow-Origin": "*"
+							},
+							success: function(data) {
+								$("#dump").text(data);
+							},
+							error: function(err) {
+								if (err.responseJSON != undefined) {
+									if (typeof err.responseJSON.detail == 'object') {
+										alert("请确保已经填写完成所有字段，并且字段符合规则！");
+									} else {
+										alert(err.responseJSON.detail);
+									}
+								} else {
+									alert(err.responseText);
+								}
+							}
+						})
+					},
+					error: function(err) {
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+					}
+				})
+			}
+
+			function get_friend() {
+				$.ajax({
+					type: "post",
+					async: true,
+					url: "/friend",
+					data: new FormData($("#friend")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					headers: {
+						"Authorization": $.session.get("Authorization"),
+						"Access-Control-Allow-Origin": "*"
+					},
+					success: function(data) {
+						$("#friend_show").text(JSON.stringify(data, null, 4));
+					},
+					error: function(err) {
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+					}
+				})
+			}
+
+			function get_group() {
+				$.ajax({
+					type: "post",
+					async: true,
+					url: "/group",
+					data: new FormData($("#group")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					headers: {
+						"Authorization": $.session.get("Authorization"),
+						"Access-Control-Allow-Origin": "*"
+					},
+					success: function(data) {
+						$("#group_show").text(JSON.stringify(data, null, 4));
+					},
+					error: function(err) {
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+					}
+				})
+			}
+
+			function get_qmkg() {
+				$.ajax({
+					type: "post",
+					async: true,
+					url: "/k_song",
+					data: new FormData($("#qmkg")[0]),
+					dataType: "text",
+					cache: false,
+					processData: false,
+					contentType: false,
+					headers: {
+						"Authorization": $.session.get("Authorization"),
+						"Access-Control-Allow-Origin": "*"
+					},
+					success: function(data) {
+						$("#qmkg_analyze").html(data);
+					},
+					error: function(err) {
+						console.log(err);
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+					}
+				})
+			}
+
+			function logout() {
+				$.session.set("Authorization", "Bearer ");
+				window.location.href = window.location.href.split("/").slice(0, [window.location.href.split("/").length - 1]).join("/");
+			}
+		</script>
+	</body>
+</html>

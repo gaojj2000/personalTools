@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>个人辅助功能网站主页</title>
+		<link rel="shortcut icon" href="/html/favicon.ico" />
+		<link rel="bookmark" href="/html/favicon.ico" />
+		<script src="js/jquery-3.4.1.min.js"></script>
+		<script src="js/jquerysession.js"></script>
+	</head>
+	<body>
+		<center>
+			<div>
+				<ul>
+					<li class="user" onmouseenter="show_user()" style="font-weight: bolder;">用户登录</li>
+					<li class="register" onmouseenter="show_register()" style="font-weight: normal;color: white;">用户注册</li>
+					<li class="admin" onmouseenter="show_admin()" style="font-weight: normal;">管理员登录</li>
+				</ul>
+			</div>
+			<br />
+			<div>
+				<form id="user" style="display: block;">
+					<input type="text" name="username" placeholder="用户名" />
+					<input type="password" name="password" placeholder="用户密码" />
+					<a onclick="user_login()">用户登录</a>
+				</form>
+				<form id="register" style="display: none;">
+					<input type="text" name="user_name" placeholder="用户名" />
+					<input type="text" name="user_realname" placeholder="真实姓名" />
+					<input type="password" name="user_password" placeholder="用户密码" />
+					<input type="radio" name="user_sex" value="男" style="width: 60px;" checked="checked" />男
+					<input type="radio" name="user_sex" value="女" style="width: 60px;" />女
+					<input type="tel" name="user_telephone" placeholder="电话号码" />
+					<input type="email" name="user_email" placeholder="邮箱地址" />
+					<input type="text" name="user_address" placeholder="用户地址" />
+					<a onclick="register_user()">用户注册</a>
+				</form>
+				<form id="admin" style="display: none;">
+					<input type="text" name="username" placeholder="管理员用户名" />
+					<input type="password" name="password" placeholder="管理员密码" />
+					<a onclick="admin_login()">管理员登录</a>
+				</form>
+			</div>
+		</center>
+		<style>
+			html {
+				height: 100%;
+			}
+
+			body {
+				height: 99%;
+				position: relative;
+			}
+
+			center {
+				top: 50%;
+				left: 50%;
+				width: 240px;
+				height: 200px;
+				position: absolute;
+				margin: -100px 0 0 -120px;
+			}
+
+			form {
+				height: 160px;
+				padding-top: 12px;
+				border: black solid 1px;
+			}
+
+			#register {
+				height: 400px;
+				padding-top: 12px;
+				border: black solid 1px;
+			}
+
+			ul {
+				margin: 0;
+				height: 25px;
+				line-height: 25px;
+				padding-left: 20px;
+			}
+
+			li {
+				border: 0;
+				float: left;
+				cursor: pointer;
+				list-style: none;
+			}
+
+			input[type="text"],
+			input[type="password"],
+			input[type="tel"],
+			input[type="email"] {
+				float: left;
+				width: 200px;
+				height: 25px;
+				margin: 10px 15px;
+			}
+
+			a {
+				float: left;
+				color: black;
+				width: 100px;
+				padding: 2px;
+				cursor: pointer;
+				margin: 10px 70px;
+				text-decoration: none;
+				border: black solid 1px;
+			}
+		</style>
+		<script>
+			if (!$.session.get("Authorization")) {
+				$.session.set("Authorization", "Bearer "); // 必须要有初始值，否则后端可能不会生成中文返回
+			}
+
+			function show_admin() {
+				document.getElementById("user").style.display = 'none';
+				document.getElementById("admin").style.display = 'block';
+				document.getElementById("register").style.display = 'none';
+				document.getElementsByClassName("user")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("admin")[0].style.fontWeight = 'bolder';
+				document.getElementsByClassName("register")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("user")[0].style.color = 'black';
+				document.getElementsByClassName("admin")[0].style.color = 'black';
+				document.getElementsByClassName("register")[0].style.color = 'white';
+			}
+
+			function show_register() {
+				document.getElementById("admin").style.display = 'none';
+				document.getElementById("user").style.display = 'none';
+				document.getElementById("register").style.display = 'block';
+				document.getElementsByClassName("user")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("admin")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("register")[0].style.fontWeight = 'bolder';
+				document.getElementsByClassName("user")[0].style.color = 'white';
+				document.getElementsByClassName("admin")[0].style.color = 'white';
+				document.getElementsByClassName("register")[0].style.color = 'black';
+			}
+
+			function show_user() {
+				document.getElementById("admin").style.display = 'none';
+				document.getElementById("user").style.display = 'block';
+				document.getElementById("register").style.display = 'none';
+				document.getElementsByClassName("user")[0].style.fontWeight = 'bolder';
+				document.getElementsByClassName("admin")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("register")[0].style.fontWeight = 'normal';
+				document.getElementsByClassName("user")[0].style.color = 'black';
+				document.getElementsByClassName("admin")[0].style.color = 'black';
+				document.getElementsByClassName("register")[0].style.color = 'white';
+			}
+
+			function user_login() {
+				$.ajax({
+					type: "post",
+					async: false,
+					url: "/user_login",
+					data: new FormData($("#user")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					success: function(data) {
+						$.session.set("Authorization", "Bearer " + data.access_token);
+						// alert("登录成功！");
+						window.location.href = window.location.href.split("/").slice(0, [window.location.href.split("/").length - 1]).join("/") + "/user.html";
+					},
+					error: function(err) {
+						alert(err.responseJSON.detail);
+					}
+				})
+			}
+
+			function register_user() {
+				$.ajax({
+					type: "post",
+					async: false,
+					url: "/user_add",
+					data: new FormData($("#register")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					success: function(data) {
+						alert(data);
+					},
+					error: function(err) {
+						if (err.responseJSON != undefined) {
+							if (typeof err.responseJSON.detail == 'object') {
+								alert("请确保已经填写完成所有字段，并且字段符合规则！");
+							} else {
+								alert(err.responseJSON.detail);
+							}
+						} else {
+							alert(err.responseText);
+						}
+						if (err.status == 201) {
+							show_user();
+						}
+					}
+				})
+			}
+
+			function admin_login() {
+				$.ajax({
+					type: "post",
+					async: false,
+					url: "/admin_login",
+					data: new FormData($("#admin")[0]),
+					dataType: "json",
+					cache: false,
+					processData: false,
+					contentType: false,
+					success: function(data) {
+						$.session.set("Authorization", "Bearer " + data.access_token);
+						// alert("登录成功！");
+						window.location.href = window.location.href.split("/").slice(0, [window.location.href.split("/").length - 1]).join("/") + "/admin.html";
+					},
+					error: function(err) {
+						alert(err.responseJSON.detail);
+					}
+				})
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>权限界面</title>
+		<link rel="shortcut icon" href="/html/favicon.ico" />
+		<link rel="bookmark" href="/html/favicon.ico" />
+		<script src="js/jquery-3.4.1.min.js"></script>
+		<script src="js/jquerysession.js"></script>
+	</head>
+	<body>
+		<pre id="show"></pre>
+		<style>
+			a {
+				color: black;
+				padding: 5px 10px;
+				cursor: pointer;
+				text-decoration: none;
+				border: black solid 1px;
+			}
+
+			a.downloader {
+				padding: 5px;
+				margin: 5px;
+			}
+		</style>
+		<script>
+			if (!$.session.get("Authorization")) {
+				$.session.set("Authorization", "Bearer "); // 必须要有初始值，否则后端可能不会生成中文返回
+			}
+
+			$.ajax({
+				type: "get",
+				async: true,
+				url: "/permission_info",
+				dataType: "text",
+				cache: false,
+				processData: false,
+				contentType: false,
+				headers: {
+					"Authorization": $.session.get("Authorization"),
+					"Access-Control-Allow-Origin": "*"
+				},
+				success: function(data) {
+					$("#show").html(data);
+				},
+				error: function(err) {
+					if (err.responseJSON != undefined) {
+						if (typeof err.responseJSON.detail == 'object') {
+							alert("请确保已经填写完成所有字段，并且字段符合规则！");
+						} else {
+							alert(err.responseJSON.detail);
+						}
+					} else {
+						alert(err.responseText);
+					}
+				}
+			})
+		</script>
+	</body>
+</html>
